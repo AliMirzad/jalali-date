@@ -114,6 +114,7 @@ public final class PersianDate implements Comparable<PersianDate> {
     }
 
     public PersianDate minusDays(long days) {
+        if (days == 0) return this;
         return plusDays(-days);
     }
 
@@ -126,11 +127,21 @@ public final class PersianDate implements Comparable<PersianDate> {
         return of(ny, nm, nd);
     }
 
+    public PersianDate minusMonths(long months) {
+        if (months == 0) return this;
+        return plusMonths((int) -months);
+    }
+
     public PersianDate plusYears(int years) {
         if (years == 0) return this;
         int ny = this.year + years;
         int nd = Math.min(this.day, lengthOfMonth(ny, this.month));
         return of(ny, this.month, nd);
+    }
+
+    public PersianDate minusYears(long years) {
+        if (years == 0) return this;
+        return plusYears((int) -years);
     }
 
     /* ======================= Comparison / DayOfWeek ======================= */
@@ -270,39 +281,44 @@ public final class PersianDate implements Comparable<PersianDate> {
 
     /** jalali y/m/d from JDN (inverse; zero-based offset to avoid month=13). */
     private static int[] jdnToJalali(long jdn) {
-        // Convert JDN -> Gregorian to locate the current gy and then Farvardin 1 JDN
+        // 1) ابتدا سال گریگوری متناظر با JDN را می‌گیریم و سال جلالی حدسی = gy - 621
         int[] g = jdnToGregorian(jdn);
         int gy = g[0];
         int jy = gy - 621;
 
+        // 2) JDN روز 1 فروردین سال جلالی حدسی
         int[] cal = jalCal(jy);
-        int gyMarch = cal[0];
-        int marchDay = cal[1];
+        long jdn1F = gregorianToJdn(cal[0], 3, cal[1]);
 
-        long jdn1Farvardin = gregorianToJdn(gyMarch, 3, marchDay);
+        long k = jdn - jdn1F; // فاصله از 1 فروردین همان سال
 
-        int d0 = (int)(jdn - jdn1Farvardin); // zero-based day index (0..365)
         int jm, jd;
 
-        if (d0 >= 0 && d0 <= 185) {
-            // Farvardin..Shahrivar: 6 months * 31 days
-            jm = (d0 / 31) + 1;
-            jd = (d0 % 31) + 1;
-        } else {
-            int d1;
-            if (d0 >= 0) {
-                d1 = d0 - 186;
+        if (k >= 0) {
+            // داخل همان سال جلالی
+            if (k <= 185) {
+                jm = (int)(k / 31) + 1;
+                jd = (int)(k % 31) + 1;
             } else {
-                // If JDN is before Farvardin 1 of jy, go back to previous jalali year
-                jy -= 1;
-                cal = jalCal(jy);
-                gyMarch = cal[0];
-                marchDay = cal[1];
-                jdn1Farvardin = gregorianToJdn(gyMarch, 3, marchDay);
-                d1 = (int)(jdn - jdn1Farvardin) - 186;
+                k -= 186;
+                jm = (int)(k / 30) + 7;
+                jd = (int)(k % 30) + 1;
             }
-            jm = (d1 / 30) + 7;     // Mehr..Esfand
-            jd = (d1 % 30) + 1;
+        } else {
+            // 3) اگر قبل از 1 فروردین بودیم، می‌رویم به سال جلالی قبلی و دوباره k را از نو می‌سنجیم
+            jy -= 1;
+            cal = jalCal(jy);
+            jdn1F = gregorianToJdn(cal[0], 3, cal[1]);
+            k = jdn - jdn1F;
+
+            if (k <= 185) {
+                jm = (int)(k / 31) + 1;
+                jd = (int)(k % 31) + 1;
+            } else {
+                k -= 186;
+                jm = (int)(k / 30) + 7;
+                jd = (int)(k % 30) + 1;
+            }
         }
 
         return new int[]{jy, jm, jd};
