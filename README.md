@@ -123,15 +123,8 @@ jalali-date/
 
 ---
 
-## 🧾 مجوز
-
-این پروژه تحت مجوز **MIT License** منتشر شده است.
-
----
-
 ## 👨‍💻 توسعه‌دهنده
-
-**Amir Zadeh**  
+**Amirzad**  
 📧 [amirzad.dev@gmail.com](mailto:amirzad.dev@gmail.com)  
 🌐 [github.com/amirzad](https://github.com/amirzad)
 
