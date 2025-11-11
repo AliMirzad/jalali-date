@@ -125,8 +125,8 @@ jalali-date/
 
 ## 👨‍💻 توسعه‌دهنده
 **Amirzad**  
-📧 [amirzad.dev@gmail.com](mailto:amirzad.dev@gmail.com)  
-🌐 [github.com/amirzad](https://github.com/amirzad)
+📧 [alimirzad99@gmail.com](mailto:alimirzad99@gmail.com)  
+🌐 [github.com/AliMirzad](https://github.com/AliMirzad)
 
 ---
 
