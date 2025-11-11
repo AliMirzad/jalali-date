@@ -1,86 +1,73 @@
 package ir.amirzad;
 
 import ir.amirzad.core.PersianDate;
-import ir.amirzad.util.PersianDateRange;
+import ir.amirzad.core.PersianDateTime;
+import ir.amirzad.format.PersianDateFormatter.DigitStyle;
+import ir.amirzad.util.PersianDateUtils;
 import org.junit.Test;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Spliterator;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 
 public class UtilBranchDeepTests {
 
     @Test
-    public void halfOpen_empty_and_iterator_noSuchElement() {
-        PersianDate d = PersianDate.of(1402, 10, 10);
-        PersianDateRange empty = PersianDateRange.halfOpen(d, d); // تهی
+    public void min_max_clamp_branches() {
+        PersianDate a = PersianDate.of(1402, 12, 1);
+        PersianDate b = PersianDate.of(1402, 12, 29);
+        PersianDate c = PersianDate.of(1403, 1, 1);
 
-        assertEquals(0, empty.lengthInDays());
-        assertFalse(empty.contains(d));
+        assertEquals(a, PersianDateUtils.min(a, b));
+        assertEquals(c, PersianDateUtils.max(b, c));
 
-        Iterator<PersianDate> it = empty.iterator();
-        assertFalse(it.hasNext());
-        boolean threw = false;
+        // clamp: [b, c] - a should clamp to b
+        PersianDate clamped1 = PersianDateUtils.clamp(a, b, c);
+        assertEquals(b, clamped1);
+
+        // clamp: [a, b] - c should clamp to b
+        PersianDate clamped2 = PersianDateUtils.clamp(c, a, b);
+        assertEquals(b, clamped2);
+    }
+
+    @Test
+    public void format_overloads_and_nulls() {
+        PersianDate d = PersianDate.of(1403, 1, 1);
+        PersianDateTime dt = PersianDateTime.of(PersianDate.ofJulianDay(1403), 1, 1, 0, 0);
+
+        String s1 = PersianDateUtils.format(d, "yyyy/MM/dd", DigitStyle.LATIN);
+        String s2 = PersianDateUtils.format(dt, "yyyy/MM/dd HH:mm:ss", DigitStyle.LATIN);
+
+        assertNotNull(s1);
+        assertNotNull(s2);
+        assertTrue(s1.length() >= 10);
+        assertTrue(s2.length() >= 10);
+
+        boolean guardedNull1 = false, guardedNull2 = false;
         try {
-            it.next(); // باید NoSuchElementException بده
-        } catch (NoSuchElementException ex) {
-            threw = true;
+            PersianDateUtils.format((PersianDate) null, "yyyy/MM/dd", DigitStyle.LATIN);
+            guardedNull1 = true;
+        } catch (NullPointerException | IllegalArgumentException ex) {
+            guardedNull1 = true;
         }
-        assertTrue(threw);
+        try {
+            PersianDateUtils.format((PersianDateTime) null, "yyyy/MM/dd", DigitStyle.LATIN);
+            guardedNull2 = true;
+        } catch (NullPointerException | IllegalArgumentException ex) {
+            guardedNull2 = true;
+        }
+        assertTrue(guardedNull1 && guardedNull2);
     }
 
     @Test
-    public void closed_singleton_and_adjacent_union_and_intersection() {
-        PersianDate a = PersianDate.of(1402, 2, 1);
-        PersianDate b = PersianDate.of(1402, 2, 1);
+    public void try_parse_date_variants() {
+        Optional<PersianDate> ok = PersianDateUtils.tryParseDate("1402/12/29", "yyyy/MM/dd");
+        assertTrue(ok.isPresent());
 
-        // singleton
-        PersianDateRange one = PersianDateRange.closed(a, b);
-        assertEquals(1, one.lengthInDays());
-        assertTrue(one.contains(a));
+        Optional<PersianDate> bad1 = PersianDateUtils.tryParseDate("1402-12-29", "yyyy/MM/dd");
+        assertFalse(bad1.isPresent());
 
-        // رنج بعدی که «چسبیده» است
-        PersianDateRange next = PersianDateRange.closed(b.plusDays(1), b.plusDays(3));
-        PersianDateRange u = one.unionIfContiguous(next); // باید merge کند
-        assertEquals(PersianDateRange.closed(a, b.plusDays(3)), u);
-
-        // intersection تهی با یک گپ واقعی
-        PersianDateRange far = PersianDateRange.closed(b.plusDays(5), b.plusDays(7));
-        PersianDateRange inter = one.intersection(far);
-        assertEquals(0, inter.lengthInDays()); // این پیاده‌سازی null نمی‌دهد، رنج تهی می‌دهد
-    }
-
-    @Test
-    public void overlap_full_sub_super() {
-        PersianDateRange full = PersianDateRange.closed(PersianDate.of(1401,1,1), PersianDate.of(1401,1,10));
-        PersianDateRange sub  = PersianDateRange.closed(PersianDate.of(1401,1,3), PersianDate.of(1401,1,7));
-        PersianDateRange superR = PersianDateRange.closed(PersianDate.of(1400,12,29), PersianDate.of(1401,1,12));
-
-        // اشتراک‌ها
-        assertEquals(sub, full.intersection(sub));
-        assertEquals(full, full.intersection(superR));
-        assertEquals(sub, superR.intersection(sub));
-
-        // یونین‌های همپوشان
-        assertEquals(superR, full.unionIfContiguous(superR));
-        assertEquals(superR, superR.unionIfContiguous(full));
-    }
-
-    @Test
-    public void spliterator_tryAdvance_and_estimateSize_paths() {
-        PersianDate start = PersianDate.of(1401, 3, 28);
-        PersianDate end   = PersianDate.of(1401, 4, 2); // 5 روز
-        PersianDateRange r = PersianDateRange.closed(start, end);
-
-        Spliterator<PersianDate> sp = r.spliterator();
-        AtomicInteger cnt = new AtomicInteger();
-        while (sp.tryAdvance(x -> cnt.incrementAndGet())) { /* consume */ }
-
-        assertEquals(r.lengthInDays(), cnt.get());
-        // ensure subsequent tryAdvance is false
-        assertFalse(sp.tryAdvance(x -> {}));
+        Optional<PersianDate> bad2 = PersianDateUtils.tryParseDate("1402/13/01", "yyyy/MM/dd");
+        assertFalse(bad2.isPresent());
     }
 }

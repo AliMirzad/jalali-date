@@ -11,7 +11,7 @@
 
     <name>jalali-date</name>
     <description>کتابخانهٔ تاریخ/زمان جلالی (Persian) با محاسبات integer-only، سازگار با Java 8</description>
-    <url>https://github.com/amirzad/jalali-date</url>
+    <url>https://github.com/AliMirzad/jalali-date</url>
 
     <!-- ==== Metadata (for Central) ==== -->
     <licenses>
@@ -27,15 +27,15 @@
             <id>amirzad</id>
             <name>amirzad</name>
             <email>alimrzd99@gmail.com</email>
-            <organization>amirzad</organization>
-            <organizationUrl>https://github.com/amirzad</organizationUrl>
+            <organization>AliMirzad</organization>
+            <organizationUrl>https://github.com/AliMirzad</organizationUrl>
         </developer>
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:amirzad/jalali-date.git</connection>
-        <developerConnection>scm:git:git@github.com:amirzad/jalali-date.git</developerConnection>
-        <url>https://github.com/amirzad/jalali-date</url>
+        <connection>scm:git:git@github.com:AliMirzad/jalali-date.git</connection>
+        <developerConnection>scm:git:git@github.com:AliMirzad/jalali-date.git</developerConnection>
+        <url>https://github.com/AliMirzad/jalali-date</url>
         <tag>HEAD</tag>
     </scm>
 
